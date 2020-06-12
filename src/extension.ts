@@ -1,27 +1,31 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
+  let disposable = vscode.commands.registerCommand(
+    "allinone.folderWithAppropriateFiles",
+    async (fileUri) => {
+      const configuration = vscode.workspace.getConfiguration("allinone");	  
+	  const folderName = await vscode.window.showInputBox();
+		
+      if (folderName && fileUri) {
+        const folderPath = vscode.Uri.joinPath(fileUri, folderName);
+		await vscode.workspace.fs.createDirectory(folderPath);
+		
+        const workspaceEdit = new vscode.WorkspaceEdit();
+        const extensions = configuration.get("fileExtensions");
+        if (Array.isArray(extensions) && extensions.length > 0) {
+          extensions.forEach((ext) => {
+            workspaceEdit.createFile(
+              vscode.Uri.joinPath(folderPath, `${folderName}.${ext}`)
+            );
+		  });
+		  await vscode.workspace.applyEdit(workspaceEdit);
+        }
+      }
+    }
+  );
 
-	// Use the console to output diagnostic information (console.log) and errors (console.error)
-	// This line of code will only be executed once when your extension is activated
-	console.log('Congratulations, your extension "allinone" is now active!');
-
-	// The command has been defined in the package.json file
-	// Now provide the implementation of the command with registerCommand
-	// The commandId parameter must match the command field in package.json
-	let disposable = vscode.commands.registerCommand('allinone.helloWorld', () => {
-		// The code you place here will be executed every time your command is executed
-
-		// Display a message box to the user
-		vscode.window.showInformationMessage('Hello World from AllInOne!');
-	});
-
-	context.subscriptions.push(disposable);
+  context.subscriptions.push(disposable);
 }
 
-// this method is called when your extension is deactivated
 export function deactivate() {}
